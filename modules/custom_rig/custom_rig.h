@@ -18,21 +18,22 @@
 # Spatial hierarchy - Bind spatial node transform to custom_bone_pose based on json constraint information
 */
 
+class CustomRigJson;
+
 class CustomRig : public Node {
 	GDCLASS(CustomRig, Node);
 
 public:
+	Ref<CustomRigJson> customRigJson;
 	std::vector<Spatial *> controllerList;
-	int testProperty = 0;
 
 	CustomRig();
 	~CustomRig();
 
-	//UI draw related
-	void set_testProperty(int p_testProperty);
-	int get_testProperty() { return testProperty; };
+	void set_customRigJson(Ref<CustomRigJson> p_customRigJson);
+	Ref<CustomRigJson> get_customRigJson() { return customRigJson; };
 
-	void TestBindMethod();
+	void generateNodeTreeFromJson(Dictionary jsonDict);
 
 protected:
 	JSONParseResult *hierarchyRef;
