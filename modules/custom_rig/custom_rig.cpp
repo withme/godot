@@ -9,20 +9,38 @@ CustomRig::CustomRig() {
 CustomRig::~CustomRig() {
 }
 
-void CustomRig::set_customRigJson(Ref<CustomRigJson> p_customRigJson) {
-	if (customRigJson == p_customRigJson)
+//void CustomRig::set_customRigJson(Ref<CustomRigJson> p_customRigJson) {
+//	if (customRigJson == p_customRigJson)
+//		return;
+//
+//	if (customRigJson.is_valid())
+//		customRigJson->remove_change_receptor(this);
+//
+//	customRigJson = p_customRigJson;
+//
+//	if (customRigJson.is_valid())
+//		customRigJson->add_change_receptor(this);
+//		
+//	emit_signal("customRigJson_changed");
+//	_change_notify("customRigJson");
+//}
+
+//Attempts to open and parse the json file
+void CustomRig::set_jsonFilePath(String p_jsonFilePath) {
+	//OpenFileDialog();
+	if (p_jsonFilePath == jsonFilePath)
 		return;
 
-	if (customRigJson.is_valid())
-		customRigJson->remove_change_receptor(this);
-
-	customRigJson = p_customRigJson;
-
-	if (customRigJson.is_valid())
-		customRigJson->add_change_receptor(this);
-		
-	emit_signal("customRigJson_changed");
-	_change_notify("customRigJson");
+	jsonFilePath = p_jsonFilePath;
+	Error err = parseJsonFile(jsonFilePath, jsonDict);
+	if (err != Error::OK) {
+		print_error("Error parsing json file.");
+		return;
+	} else {
+		String tempJsonStr = JSON::print(jsonVar);
+		print_line("Json file parsed.");
+		//print_line(tempJsonStr);
+	}
 }
 
 //String CustomRig::OpenJsonFile() {
@@ -55,14 +73,40 @@ Spatial *CustomRig::CreateCtrlNode(Transform initTransform) {
 	return tempPtr;
 }
 
-void CustomRig::_bind_methods() {
-	//ClassDB::bind_method(D_METHOD("TestBindMethod"), &CustomRig::TestBindMethod);
-	//ClassDB::bind_method(D_METHOD("set_testProperty"), &CustomRig::set_testProperty);
-	//ClassDB::bind_method(D_METHOD("get_testProperty"), &CustomRig::get_testProperty);
-	ClassDB::bind_method(D_METHOD("set_customRigJson"), &CustomRig::set_customRigJson);
-	ClassDB::bind_method(D_METHOD("get_customRigJson"), &CustomRig::get_customRigJson);
+Error CustomRig::parseJsonFile(String filePath, Dictionary &jsonDict) {
+	Error err = jsonFile.open(filePath, FileAccess::ModeFlags::READ);
+	if (err != Error::OK) {
+		//print_error("Error attemping to open file, please double check file path.");
+		return err;
+	}
 
-	//ADD_GROUP("Custom Properties", "");
-	//ADD_PROPERTY(PropertyInfo(Variant::INT, "TestProperty", PROPERTY_HINT_RANGE, "1,16384,1"), "set_testProperty", "get_testProperty");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "JsonRigObject", PROPERTY_HINT_RESOURCE_TYPE, "CustomRigJson"), "set_customRigJson", "get_customRigJson");
+	String jsonStrObj;
+	while (!jsonFile.eof_reached()) {
+		jsonStrObj += jsonFile.get_line();
+	}
+
+	//Variant jsonVar;
+	String errorStr;
+	int errorLn = -1;
+
+	err = JSON::parse(jsonStrObj, jsonVar, errorStr, errorLn);
+	jsonDict = Dictionary(jsonVar);
+
+	return err;
+}
+
+void CustomRig::closeJsonFile() {
+	jsonFile.close();
+}
+
+void CustomRig::_bind_methods() {
+	//ClassDB::bind_method(D_METHOD("set_customRigJson"), &CustomRig::set_customRigJson);
+	//ClassDB::bind_method(D_METHOD("get_customRigJson"), &CustomRig::get_customRigJson);
+	ClassDB::bind_method(D_METHOD("set_jsonFilePath"), &CustomRig::set_jsonFilePath);
+	ClassDB::bind_method(D_METHOD("get_jsonFilePath"), &CustomRig::get_jsonFilePath);
+	ClassDB::bind_method(D_METHOD("get_jsonDictionary"), &CustomRig::get_jsonDictionary);
+
+	//ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "JsonRigObject", PROPERTY_HINT_RESOURCE_TYPE, "CustomRigJson"), "set_customRigJson", "get_customRigJson");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "jsonFilePath"), "set_jsonFilePath", "get_jsonFilePath");
+	//ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "jsonDict"), "set_jsonDict", "get_jsonDict");
 }
